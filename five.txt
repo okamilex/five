@@ -1,0 +1,168 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <fstream>
+
+using namespace std;
+
+class Edge {
+public:
+
+	int from = 0;
+	int to = 0;
+	int weight = 0;
+	int num = 0;
+
+	Edge() {
+		from = to = num = weight = 0;
+	}
+	Edge(int a, int b, int c, int i) {
+		from = a;
+		to = b;
+		weight = c;
+		num = i;
+	}
+
+	bool operator<(Edge&o) {
+		return weight < o.weight;
+	}
+};
+bool mf;
+Edge*edges;
+int*p, *restore;
+int*ew;
+bool*used;
+int N, M, cnt;
+long long compWeight, curWeight;
+vector<int>current;
+vector<int*>answer;
+long long*minWs;
+int**pr;
+
+int get(int x) {
+	if (p[x] != x)p[x] = get(p[x]);
+	return p[x];
+}
+
+void unite(int a, int b) {
+	p[get(a)] = get(b);
+}
+
+int msp(int start, int weight) {
+	for (int i = 0; i < N; i++)restore[i] = p[i];
+	for (int i = start; i < M; i++) {
+		if (get(edges[i].from) != get(edges[i].to)) {
+			weight += edges[i].weight;
+			unite(edges[i].from, edges[i].to);
+		}
+	}
+	for (int i = 1; i < N; i++)if (get(i) != get(i - 1))
+	{
+		for (int j = 0; j < N; j++)p[j] = restore[j];
+		return 0;
+	}
+	for (int i = 0; i < N; i++)p[i] = restore[i];
+	return weight;
+}
+
+void rec(int id, int edgeID)
+{
+	if (!mf&&edges[edgeID].weight < ew[id])return;
+	int*restore = new int[N];
+	for (int i = 0; i<N; i++)restore[i] = p[i];
+	bool retMF = false;
+	if (!mf&&edges[edgeID].weight > ew[id]) {
+		mf = true;
+		retMF = true;
+	}
+	curWeight += edges[edgeID].weight;
+	current.push_back(edges[edgeID].num);
+	unite(edges[edgeID].from, edges[edgeID].to);
+	used[edgeID] = true;
+	if (id == N - 2)
+	{
+		int*res = new int[N - 1];
+		for (int i = 0; i < N - 1; i++)res[i] = current[i];
+		answer.push_back(res);
+		cnt++;
+		current.pop_back();
+		curWeight -= edges[edgeID].weight;
+		used[edgeID] = false;
+		if (retMF)mf = false;
+		p = restore;
+		return;
+	}
+	int msW;
+	for (int i = edgeID + 1; i < M; i++)if (!used[i])
+	{
+		if ((N - 4 - id >= 0 && curWeight + edges[i].weight + minWs[N - 4 - id] > compWeight))break;
+		if (curWeight + edges[i].weight > compWeight)break;
+		if (get(edges[i].from) == get(edges[i].to))continue;
+		if (curWeight + edges[i].weight + minWs[N - 2] - minWs[id] < compWeight)continue;
+		msW = msp(i, curWeight);
+		if (msW != compWeight)break;
+		rec(id + 1, i);
+	}
+	current.pop_back();
+	curWeight -= edges[edgeID].weight;
+	used[edgeID] = false;
+	if (retMF)mf = false;
+	p = restore;
+}
+
+
+int main() {
+	
+
+	ifstream fin("input.txt"); // открыли файл для чтения
+	ofstream fout("output.txt"); // создаём объект класса ofstream для записи и связываем его с файлом cppstudio.txt
+	fin >> N >> M; // считали первое слово из файла
+	
+
+	mf = false;
+	p = new int[N];
+	restore = new int[N];
+	edges = new Edge[M];
+	minWs = new long long[N - 1];
+	ew = new int[N - 1];
+	used = new bool[M];
+	for (int i = 0; i<N; i++)p[i] = i;
+
+	int a = 0, b = 0, c = 0;
+	for (int i = 0; i<M; i++) {
+		fin >> a >> b >> c;
+		a--;
+		b--;
+		edges[i] = Edge(a, b, c, i + 1);
+	}
+	fin.close(); 
+	sort(edges, edges + M);
+	int L = 0;
+	compWeight = 0;
+	for (int i = 0; i<M; i++) {
+		if (get(edges[i].from) != get(edges[i].to)) {
+			unite(edges[i].from, edges[i].to);
+			compWeight += edges[i].weight;
+			ew[L] = edges[i].weight;
+			minWs[L++] = compWeight;
+		}
+	}
+
+	cnt = 0;
+
+	for (int i = 0; i < M; i++)used[i] = false;
+	for (int i = 0; i < M; i++)
+	{
+		for (int j = 0; j < N; j++)p[j] = j;
+		if (edges[i].weight + minWs[N - 3] <= compWeight)rec(0, i);
+	}
+
+	fout << cnt << endl;
+	for (int i = 0; i < cnt; i++) {
+		for (int j = 0; j < N - 2; j++)
+			fout << answer[i][j] << " ";
+			//printf("%d ", answer[i][j]);
+		fout << answer[i][N - 2] << endl;
+		//printf("%d\n", answer[i][N - 2]);
+	}
+}
