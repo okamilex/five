@@ -1,0 +1,2 @@
+if (j - pos - 1 >= 0 && t - m[i] - bad_pos - 2 >= j - pos - 1)
+						ans[i][bad_pos - pos + m[i] - j][1] += (((((((((ans[i - 1][bad_pos][0] * fact[m[i]]) % dd) * C_(m[i], j)) % dd) * C[bad_pos][pos]) % dd) * C[t - m[i] - bad_pos - 2][j - pos - 1]) % dd) * 2) % dd;
